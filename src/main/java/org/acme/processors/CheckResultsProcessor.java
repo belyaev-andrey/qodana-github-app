@@ -33,13 +33,11 @@ public class CheckResultsProcessor {
                     .createIssue("Static check failed for push from: "+pushPayload.getSender().getLogin());
             issueBuilder.assignee(pushPayload.getSender());
             issueBuilder.body(report);
-            GHIssue issue = null;
             try {
-                issue = issueBuilder.create();
+                return issueBuilder.create();
             } catch (IOException e) {
                 throw new IllegalStateException("Cannot create issue", e);
             }
-            return issue;
         }
         return null;
     }
