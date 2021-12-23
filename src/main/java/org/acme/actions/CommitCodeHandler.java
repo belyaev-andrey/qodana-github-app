@@ -22,7 +22,9 @@ public class CommitCodeHandler {
     void onCodeCommitted(@Push GHEventPayload.Push pushPayload) {
         LOG.info("Pushed to repository");
         String url = pushPayload.getRepository().getHttpTransportUrl();
+
         try (GenericContainer container = new GenericContainer("jetbrains/qodana-jvm")) {
+
             Path srcDir = Files.createTempDirectory("git-src",
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx")));
             Path resultDir = Files.createTempDirectory("git-result",
@@ -37,6 +39,8 @@ public class CommitCodeHandler {
                     .setURI(url)
                     .setDirectory(srcDir.toFile())
                     .call();
+
+
 
             container.start();
             LOG.info(container.getLogs());
