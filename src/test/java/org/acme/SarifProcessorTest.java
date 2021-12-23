@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class SarifTest {
+public class SarifProcessorTest {
 
     @Test
     public void testParseSarif() throws IOException {
