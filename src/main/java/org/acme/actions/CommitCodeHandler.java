@@ -33,7 +33,7 @@ public class CommitCodeHandler {
     CheckResultsProcessor checkResultsProcessor;
 
     void onCodeCommitted(@Push GHEventPayload.Push pushPayload) {
-        LOG.info("Pushed to repository");
+        LOG.info(String.format("Pushed to repository: %s user: %s", pushPayload.getRepository(), pushPayload.getPusher().getEmail()));
         String url = pushPayload.getRepository().getHttpTransportUrl();
 
         try {
@@ -48,16 +48,21 @@ public class CommitCodeHandler {
                     .map(s -> new File(s).toPath())
                     .orElse(null);//Dirty but fair
 
-            if (!runChecks(url, srcDir, resultDir, pluginsDir)) return;
+            if (!runChecks(url, srcDir, resultDir, pluginsDir)) {
+                LOG.error("Checks were not executed, see application log for details");
+                return;
+            }
+
+            LOG.info("Checks were successful, analyzing results");
 
             Arrays.stream(resultDir.toFile().listFiles())
                     .filter(file -> "qodana.sarif.json".equals(file.getName()))
                     .findFirst().map(f -> sarifReportProcessor.process(f))
                     .map(results -> checkResultsProcessor.processResults(results, pushPayload))
-                    .ifPresent(issue -> LOG.error("Problems found, issue " + issue.getNumber() + " created"));
+                    .ifPresent(issue -> LOG.info(String.format("Problems found, issue %d created", issue.getNumber())));
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Error during checks execution", e);
         }
 
     }
@@ -80,7 +85,7 @@ public class CommitCodeHandler {
                 container.withFileSystemBind(pluginsDir.toFile().getAbsolutePath(), "/opt/idea/plugins/" + pluginName);
             }
 
-            Git git = Git.cloneRepository()
+            Git.cloneRepository()
                     .setURI(url)
                     .setDirectory(srcDir.toFile())
                     .call();
