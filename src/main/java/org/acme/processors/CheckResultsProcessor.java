@@ -2,6 +2,8 @@ package org.acme.processors;
 
 
 import com.contrastsecurity.sarif.Location;
+import com.contrastsecurity.sarif.PhysicalLocation;
+import com.contrastsecurity.sarif.Region;
 import com.contrastsecurity.sarif.Result;
 import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.GHEventPayload;
@@ -18,10 +20,17 @@ public class CheckResultsProcessor {
 
     private String locationsToString(List<Location> locations) {
         return locations.stream().map(
-                location ->
-                        location.getPhysicalLocation().getArtifactLocation().getUri() + " " +
-                        location.getPhysicalLocation().getContextRegion().getStartLine() + ":" +
-                                location.getPhysicalLocation().getContextRegion().getStartColumn()
+                location -> {
+                    PhysicalLocation physicalLocation = location.getPhysicalLocation();
+                    Region contextRegion = physicalLocation.getContextRegion();
+
+                    return String.format("%s %d:%d\n```%s\n%s\n```",
+                            physicalLocation.getArtifactLocation().getUri(),
+                            contextRegion.getStartLine(),
+                            contextRegion.getStartColumn(),
+                            physicalLocation.getRegion().getSourceLanguage().toLowerCase(),
+                            contextRegion.getSnippet().getText());
+                }
         ).collect(Collectors.joining("\n"));
     }
 
@@ -46,8 +55,11 @@ public class CheckResultsProcessor {
     String getReport(List<Result> results) {
         return results.stream()
                 .filter(result -> result.getLevel() == Result.Level.WARNING || result.getLevel() == Result.Level.ERROR)
-                .map(result -> result.getLevel() + ": " + result.getMessage().getText() +
-                        "\n: " + locationsToString(result.getLocations())).collect(Collectors.joining("\n"));
+                .map(result -> String.format("%s: %s\nSource:%s",
+                        result.getLevel().value().toUpperCase(),
+                        result.getMessage().getText(),
+                        locationsToString(result.getLocations())))
+                .collect(Collectors.joining("\n"));
     }
 
 }

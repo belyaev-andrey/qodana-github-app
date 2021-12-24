@@ -25,7 +25,7 @@ public class SarifProcessorTest {
         List<Result> results = sarifSchema210.getRuns().get(0).getResults().stream()
                 .filter(result -> result.getLevel() == Result.Level.WARNING)
                 .collect(Collectors.toList());
-        assertEquals(1, results.size());
+        assertEquals(2, results.size());
     }
 
 }
